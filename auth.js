@@ -1,21 +1,12 @@
-const { AuthorizationCode } = require('simple-oauth2');
-
-const config = {
-  client: {
-    id: process.env.OAUTH_CLIENT_ID,
-    secret: process.env.OAUTH_CLIENT_SECRET
-  },
-  auth: {
-    tokenHost: process.env.GIT_HOSTNAME || 'https://github.com',
-    tokenPath: '/login/oauth/access_token',
-    authorizePath: '/login/oauth/authorize'
-  }
-};
-
-const oauth2 = new AuthorizationCode(config);
-
-const authMiddleWareInit = (provider) => {
-  return oauth2;
+const authMiddleWareInit = (oauth2) => {
+  return function authMiddleWare(req, res) {
+    const authorizationUri = oauth2.authorizeURL({
+      redirect_uri: process.env.REDIRECT_URL,
+      scope: process.env.SCOPES || 'repo,user',
+      state: Math.random().toString(36).substring(7)
+    });
+    res.redirect(authorizationUri);
+  };
 };
 
 module.exports = authMiddleWareInit;
