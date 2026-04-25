@@ -1,14 +1,27 @@
-const randomstring = require('randomstring')
+const { AuthorizationCode } = require('simple-oauth2');
 
-module.exports = (oauth2) => {
-  // Authorization uri definition
-  const authorizationUri = oauth2.authorizeURL({
-    redirectURI: process.env.REDIRECT_URL,
-    scope: process.env.SCOPES || 'repo,user',
-    state: randomstring.generate(32)
-  })
+module.exports = {
+  getClient: () => {
+    const config = {
+      client: {
+        id: process.env.OAUTH_CLIENT_ID,
+        secret: process.env.OAUTH_CLIENT_SECRET
+      },
+      auth: {
+        tokenHost: process.env.GIT_HOSTNAME || 'https://github.com',
+        tokenPath: '/login/oauth/access_token',
+        authorizePath: '/login/oauth/authorize'
+      }
+    };
+    return new AuthorizationCode(config);
+  },
 
-  return (req, res, next) => {
-    res.redirect(authorizationUri)
+  getToken: async (code) => {
+    const client = module.exports.getClient();
+    const tokenParams = {
+      code,
+      redirect_uri: process.env.REDIRECT_URL
+    };
+    return await client.authorizationCode.getToken(tokenParams);
   }
-}
+};
